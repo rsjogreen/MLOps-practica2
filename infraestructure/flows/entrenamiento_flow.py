@@ -36,37 +36,46 @@ def cargar_datos(ruta):
     print(f"Cargando datos desde {ruta}...")
     return leer_datos(ruta)
 
-
 @task
 def entrenar_y_registrar(df, cfg, features):
     """Entrena el modelo, calcula sus métricas y registra el run en MLflow. Devuelve (run_id, model_uri, métricas)."""
-    # 1. Partir los datos en entrenamiento y prueba, usando solo las features del conjunto.
+    
     print(f"Entrenando {cfg['modelo']['tipo']} con features={features['nombre']}...")
     numericas, categoricas = resolver_features(features["columnas"])
     variables = numericas + categoricas
-    division = cfg["division"]
-    print(f"División train/test: {division['test_size']*100:.0f}% test, semilla {division['random_state']}")
-    train_df, test_df = train_test_split(
-        df,
-        test_size=division["test_size"],
-        random_state=division["random_state"],
-        stratify=df[OBJETIVO],
-    )
+    
+    # 1. Partir los datos de forma CRONOLÓGICA (Out-of-Time Validation)
+    print("División cronológica train/test (último 20% como test)")
+    
+    # Ordenamos por la columna 'Mes' para garantizar el orden temporal
+    df_sorted = df.sort_values('Mes').copy()
+    
+    # Calculamos el índice de corte
+    test_size_ratio = cfg["division"]["test_size"]
+    split_idx = int(len(df_sorted) * (1 - test_size_ratio))
+    
+    # Separamos secuencialmente
+    train_df = df_sorted.iloc[:split_idx]
+    test_df = df_sorted.iloc[split_idx:]
+    
     X_train, y_train = train_df[variables], train_df[OBJETIVO]
     X_test, y_test = test_df[variables], test_df[OBJETIVO]
-    print(f"Conjunto de entrenamiento: {len(X_train)} filas, {len(variables)} features")
-    print(f"Conjunto de prueba: {len(X_test)} filas")
-    print(f"Proporción de {OBJETIVO}: {y_test.mean():.2%}")
+    
+    print(f"Conjunto de entrenamiento (Periodos antiguos): {len(X_train)} filas, {len(variables)} features")
+    print(f"Conjunto de prueba (Periodos recientes): {len(X_test)} filas")
+    print(f"Proporción de {OBJETIVO} en Test: {y_test.mean():.2%}")
 
     # 2. Crear y entrenar el modelo (preprocesado + estimador).
     print(f"Creando modelo {cfg['modelo']['tipo']} con parámetros {cfg['modelo'].get('parametros')}")
     tipo = cfg["modelo"]["tipo"]
     parametros = cfg["modelo"].get("parametros") or {}
     modelo = construir_modelo(tipo, parametros, numericas, categoricas)
+    
     print("Entrenando modelo...")
     modelo.fit(X_train, y_train)
     print("Modelo entrenado")
-    # 3. Calcular las métricas sobre el conjunto de prueba.
+    
+    # 3. Calcular las métricas sobre el conjunto de prueba (Out-of-time).
     umbral = cfg["metricas"]["umbral"]
     proba = modelo.predict_proba(X_test)[:, 1]
     metricas = calcular_metricas(y_test, proba, umbral)
@@ -76,13 +85,15 @@ def entrenar_y_registrar(df, cfg, features):
     print(f"Registrando run en MLflow (tracking_uri={os.environ.get('MLFLOW_TRACKING_URI', cfg['mlflow']['tracking_uri'])})...")
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", cfg["mlflow"]["tracking_uri"]))
     mlflow.set_experiment(cfg["mlflow"]["experimento"])
+    
     with mlflow.start_run(run_name=cfg["mlflow"]["nombre_run"]) as run:
         mlflow.set_tag("fase", "entrenamiento")
         mlflow.log_params(
             {
                 "modelo": tipo,
                 **parametros,
-                "semilla": division["random_state"],
+                "split_type": "chronological",
+                "test_size_ratio": test_size_ratio,
                 "umbral": umbral,
                 "features": features["nombre"],
                 "n_features": len(variables),
@@ -142,7 +153,7 @@ def promover_si_mejora(model_uri, metricas, cfg):
     return version.version
 
 
-@flow(name="entrenamiento-churn", log_prints=True)
+@flow(name="entrenamiento-churn-v2", log_prints=True)
 def entrenamiento_flow():
     with open(CONFIG, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)

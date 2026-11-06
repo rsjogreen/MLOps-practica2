@@ -44,18 +44,18 @@ def cargar_champion(cfg):
 def ingesta(cfg):
     """Toma un lote de clientes. Aquí se simula con una muestra aleatoria del CSV."""
     print(f"Ingestando lote de {cfg['inferencia']['tamano_lote']} clientes...")
-    df = leer_datos(cfg["datos"]["ruta"])
+    df = leer_datos(cfg["datos"]["ruta_test"])
     return df.sample(n=cfg["inferencia"]["tamano_lote"])
 
 
 @task
 def predecir(modelo, lote, cfg):
-    """Calcula la probabilidad de churn y guarda el resultado en un CSV con la fecha de hoy."""
+    """Calcula la probabilidad de fuga y guarda el resultado en un CSV con la fecha de hoy."""
     # Usa las mismas columnas con las que se entrenó el modelo (según la sección features de config.yaml en ese momento).
     print(f"Prediciendo con modelo versión {cfg['registro']['nombre_modelo']}...")
     proba = modelo.predict_proba(lote[list(modelo.feature_names_in_)])[:, 1]
     resultado = lote.copy()
-    resultado["probabilidad_churn"] = proba
+    resultado["probabilidad_fuga"] = proba
     resultado["prediccion"] = (proba >= 0.5).astype(int)
 
     print("Guardando predicciones en CSV...")

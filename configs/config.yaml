@@ -48,16 +48,17 @@ candidatos:
 
 mlflow:
   tracking_uri: http://localhost:5000  # servidor de MLflow de services/. Sin servidor: sqlite:///mlflow.db. MLFLOW_TRACKING_URI, si existe, tiene prioridad
-  experimento: churn-training-mlops    # nombre del experimento donde se agrupan los runs
-  nombre_run: churn-training           # nombre de cada run dentro del experimento
+  experimento: churn-training-mlops-v2    # nombre del experimento donde se agrupan los runs
+  nombre_run: churn-training-v2           # nombre de cada run dentro del experimento
 
 metricas:
   umbral: 0.5                          # probabilidad a partir de la cual se predice churn (Exited = 1)
 
 # Actividad 2: registro del modelo e inferencia.
 registro:
-  nombre_modelo: churn-modelo   # nombre en el Model Registry de MLflow
-  umbral_auc: 0.80              # AUC mínimo para ser champion; además debe superar al champion actual
+  nombre_modelo: fuga-modelo-v2   # nombre en el Model Registry de MLflow
+  umbral_auc: 0.6                 # AUC mínimo para ser champion; además debe superar al champion actual
+                                  # Si no hay champion, cualquier modelo con AUC > umbral_auc se promueve a champion para iniciar la inferencia.
 
 inferencia:
   tamano_lote: 100              # clientes que se puntúan en cada ejecución diaria
