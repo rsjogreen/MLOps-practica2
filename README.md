@@ -4,6 +4,12 @@ Proyecto de la actividad 2: pipeline de entrenamiento y pipeline de inferencia e
 
 Los servicios (MLflow y Prefect) no están en esta carpeta: se levantan desde [`services/`](../../services/README.md).
 
+## Contribuidores
+
+- Mario Alejandro Mendoza Suarez
+- Jose Esteban Arcos Muñoz
+- Robert Douglas Sjogreen Escorcia
+
 ## Estructura
 
 ```

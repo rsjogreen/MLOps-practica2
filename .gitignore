@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+
+# Test and tool caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MLflow and Prefect local state
+mlruns/
+mlartifacts/
+.mlflow/
+.prefect/
+services/mlflow_store/
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated prediction outputs
+data/prediccion_*.csv
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE settings
+.idea/
