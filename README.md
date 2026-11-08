@@ -185,3 +185,24 @@ La API recibe todas las columnas del cliente aunque el modelo use solo algunas, 
 - **La API no encuentra el modelo al arrancar:** entrena primero y revisa que `MLFLOW_TRACKING_URI` apunte al servidor correcto.
 - **`httpx.InvalidURL: Invalid non-printable ASCII character in URL, '\n'`:** la variable `PREFECT_API_URL` tiene un salto de línea al final, probablemente por haberla copiado con un salto. Comprueba su longitud con `$env:PREFECT_API_URL.Length`: debe ser `25`. Si no lo es, vuelve a definirla en una terminal nueva con `$env:PREFECT_API_URL = "http://localhost:4200/api"` y revisa que `$env:MLFLOW_TRACKING_URI.Length` sea `21`.
 - **La UI de Prefect no muestra despliegues:** ejecuta `desplegar.py` con `PREFECT_API_URL` definida y deja la terminal abierta.
+
+---
+
+## 📝 Notas de ejecución
+
+Al ejecutar el proyecto por primera vez, se recomienda seguir este orden estricto para evitar errores de conexión:
+
+1. Asegurarse de que **Docker Desktop** esté encendido (icono verde).
+2. Levantar los servicios desde la carpeta `services/`:
+   ```bash
+   docker compose -f services/docker-compose.yml up -d
+
+---
+
+## 🛠️ Solución de Problemas Comunes
+
+Durante la ejecución del proyecto en un entorno Windows limpio, se identificaron los siguientes puntos clave para asegurar que todo funcione correctamente:
+
+1.  **Error de ruta al ejecutar el entrenamiento:** Asegúrate de escribir el comando sin rutas adicionales al final. El comando correcto es:
+    ```bash
+    poetry run python infraestructure/flows/entrenamiento_flow.py
